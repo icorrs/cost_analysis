@@ -49,14 +49,18 @@ def translate_title(source_frame,engine=engine_default):
     '''
     frame1=pd.read_sql_query('select chinese,english from chinese_vs_english_title',engine)
     translate_dic={}
+    add_word_dic={'cost':'费用','quantity':'工程量'}
     for i in range(len(frame1['chinese'])):
         translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
-    #for title in list(source_frame.columns):  #for the title add date,process the translate_dic.
-        #match_obj=re.match(r'(.+)?_(\d+)',title)
-        #if match_obj.group(1) in translate_dic.keys():
-            #translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+match_obj.group(2))
-        #else:
-            #pass
+    for title in list(source_frame.columns):  #for the title add date/quantity/cost,process the translate_dic.
+        match_obj=re.match(r'(.+)_(.+)$',title)
+        if match_obj.group(1) in translate_dic.keys():
+            if match_obj.group(2) not in add_word_dic.keys():
+                translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+match_obj.group(2))
+            else:
+                translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+add_word_dic[match_obj.group(2)])
+        else:
+            pass
     source_frame=source_frame.rename(columns=translate_dic)
     return source_frame
             
@@ -210,27 +214,41 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
                                      material,date,\
                                      date,date,material,material)
         frame_material=pd.read_sql_query(get_material_quantity_sql,engine)
-        frame_material['%s_kind_cost'%(material)]=frame_material[price_now]*\
-                                       frame_material[actural_proportion]*\
+        frame_material['%s_quantity'%(material)]=frame_material[actural_proportion]*\
                                        frame_material['%s_quantity'%(date)]*\
                                        frame_material['sub_contract_boq_proportion']
-        frame_material['%s_kind_quantity'%(material)]=frame_material[actural_proportion]*\
-                                       frame_material['%s_quantity'%(date)]*\
-                                       frame_material['sub_contract_boq_proportion']
+        frame_material['%s_cost'%(material)]=frame_material[price_now]*frame_material['%s_quantity'%(material)]
         return frame_material
     frame_steel=get_material_quantity('steel')
     frame_concrete=get_material_quantity('concrete')
     frame_flooring_material=get_material_quantity('flooring_material')
     frame_formwork=get_material_quantity('formwork')
     frame_other_material=get_material_quantity('other_material')
-    frame_out=pd.merge(frame_steel,frame_concrete,on='detail_wbs_code',how='outer')
-    frame_out=pd.merge(frame_out,frame_flooring_material,on='detail_wbs_code',how='outer')
-    frame_out=pd.merge(frame_out,frame_formwork,on='detail_wbs_code',how='outer')
-    frame_out=pd.merge(frame_out,frame_other_material,on='detail_wbs_code',how='outer')
-    #return frame_out
-    frame_out.to_csv(r'c:\python tem\material_test.csv',encoding='utf-8-sig')
+    
+    '''
+     if use default concat to connect diffrent frame,there will be multiple lines in the result for those detail_wbs that
+     use more than two diffrent material(for example the 209-3-b c20-concrete-mixed-stone-wall).this can be fixed 
+     when frame_out.the code as below:
+
+        frame_out=pd.concat([frame_steel,frame_concrete,frame_flooring_material,frame_other_material,frame_formwork],\
+                       ignore_index=True,keys=['steel','concrete','flooring_material','other_material'])
+    
+     use merge/join to connect diffrent material frame,use merge,
+     but the keys contain detail_wbs_code to make sure not return Descartes with duplicate result.
+     and the keys contain all the same columns between material_frame,so the result will have no _x _y.
+    '''
+    keys_list=['detail_wbs_code','%s_quantity'%(date),'income_boq_code','sub_contract_boq_code','sub_contract_boq_proportion']
+    frame_out=pd.merge(frame_steel,frame_concrete,on=keys_list,how='outer')
+    frame_out=pd.merge(frame_out,frame_flooring_material,on=keys_list,how='outer')
+    frame_out=pd.merge(frame_out,frame_formwork,on=keys_list,how='outer')
+    frame_out=pd.merge(frame_out,frame_other_material,on=keys_list,how='outer')
+    if route is 'localmachine':
+        path=input('enter path to save:')
+        frame_out=translate_title(frame_out)
+        frame_out.to_csv('%s\\material_%s.csv'%(path,date),encoding='utf-8-sig')
+    else:
+        return frame_out
     
 
 if __name__=='__main__':
     get_material_quantity()
-
