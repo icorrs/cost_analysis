@@ -6,6 +6,7 @@
 
 import os
 import re
+import datetime
 
 import pandas as pd
 import sqlalchemy
@@ -48,17 +49,20 @@ def translate_title(source_frame,engine=engine_default):
        only be used when route='localmachine' and rename in out_put csv file.in web and import condition return english title.
     '''
     frame1=pd.read_sql_query('select chinese,english from chinese_vs_english_title',engine)
-    translate_dic={}
+    translate_dic={'total_material_cost':'甲供材总费用'}
     add_word_dic={'cost':'费用','quantity':'工程量'}
     for i in range(len(frame1['chinese'])):
         translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
     for title in list(source_frame.columns):  #for the title add date/quantity/cost,process the translate_dic.
-        match_obj=re.match(r'(.+)_(.+)$',title)
-        if match_obj.group(1) in translate_dic.keys():
-            if match_obj.group(2) not in add_word_dic.keys():
-                translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+match_obj.group(2))
+        if re.match(r'(.+)_(.+)$',title):     #for the frame's columns that not have '_',such as sub_contractor_short_name pivoted table.
+            match_obj=re.match(r'(.+)_(.+)$',title)
+            if match_obj.group(1) in translate_dic.keys():
+                if match_obj.group(2) not in add_word_dic.keys():
+                    translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+match_obj.group(2))
+                else:
+                    translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+add_word_dic[match_obj.group(2)])
             else:
-                translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+add_word_dic[match_obj.group(2)])
+                pass
         else:
             pass
     source_frame=source_frame.rename(columns=translate_dic)
@@ -86,7 +90,9 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
     frame_worked_income=pd.merge(frame_worked_income,frame_income_boq,right_on='income_boq_code',left_index=True,how='outer')
     if route is 'localmachine':
         path=input('please enter save path:')
-        translate_title(frame_worked_income).to_csv('%s\\%s.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:saving income_analysis excel file'%(datetime.datetime.today()))
+        translate_title(frame_worked_income).to_csv('%s\\%s_income.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:save completeed'%(datetime.datetime.today()))
     else:  
         return frame_worked_income
        
@@ -94,13 +100,14 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
 def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=route_default):
     '''
        query detail sub_contractor quantity,
-       result contains wbs_code,income_boq_code and sub_contract_boq_code，
+       result contains wbs_code,income_boq_code,sub_contract_boq_code，
        which can be used in command_post_sub_contract_analysis(wbs vs sub_contract) and 
        cost_analysis(income_boq_code vs sub_contract)
     '''
     sub_contractor_quantity_sql="""
                      select wbs.wbs_code,
                             wbs.income_boq_code,
+                            detail_wbs.detail_wbs_code,
                             detail_wbs.sub_contract_boq_code,
                             detail_wbs.sub_contract_boq_proportion,
                             detail_wbs_code_vs_sub_contractor_short_name.sub_contractor_short_name,
@@ -131,7 +138,9 @@ def sub_contractor_analysis_command_post(date=date_default,route=route_default):
     frame_out=pd.merge(frame_out,frame_sub_contract_boq,on=['sub_contract_boq_code'],how='outer')
     if route is 'localmachine':
         path=input('please enter save path:')
+        print('%s:saving sub_contract_analysis command post asked')
         translate_title(frame_out).to_csv('%s\\%s_sub_contractor_analysis_command_post.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:save completed'%(datetime.datetime.today()))
     else:
         return frame_out
 
@@ -155,7 +164,9 @@ def sub_contractor_analysis(date=date_default,route=route_default):
             pass
     if route is 'localmachine':
         path=input('please enter save path:')
+        print('%s:saving sub_contractor_analysis'%(datetime.datetime.today()))
         translate_title(frame_out).to_csv('%s\\%s_sub_contractor_analysis.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:save completed'%(datetime.datetime.today()))
     else:
         return frame_out
 
@@ -242,13 +253,19 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
     frame_out=pd.merge(frame_out,frame_flooring_material,on=keys_list,how='outer')
     frame_out=pd.merge(frame_out,frame_formwork,on=keys_list,how='outer')
     frame_out=pd.merge(frame_out,frame_other_material,on=keys_list,how='outer')
+    frame_out['total_material_cost']=frame_out['concrete_cost'].fillna(0)+frame_out['steel_cost'].fillna(0)+frame_out['formwork_cost'].fillna(0)+\
+                                     frame_out['flooring_material_cost'].fillna(0)+frame_out['other_material_cost'].fillna(0)
     if route is 'localmachine':
         path=input('enter path to save:')
         frame_out=translate_title(frame_out)
-        frame_out.to_csv('%s\\material_%s.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:saving material_quantity'%(datetime.datetime.today()))
+        frame_out.to_csv('%s\\%s_material.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:save completed'%(datetime.datetime.today()))
     else:
         return frame_out
     
 
 if __name__=='__main__':
+    income_analysis()
+    sub_contractor_analysis()
     get_material_quantity()
