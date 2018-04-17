@@ -50,7 +50,7 @@ def translate_title(source_frame,engine=engine_default):
     '''
     frame1=pd.read_sql_query('select chinese,english from chinese_vs_english_title',engine)
     translate_dic={'total_material_cost':'甲供材总费用'}
-    add_word_dic={'cost':'费用','quantity':'工程量'}
+    add_word_dic={'cost':'费用','quantity':'工程量','totalquantity':'总工程量'}
     for i in range(len(frame1['chinese'])):
         translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
     for title in list(source_frame.columns):  #for the title add date/quantity/cost,process the translate_dic.
@@ -97,6 +97,29 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
         return frame_worked_income
        
 
+def income_wbs(date=date_default,engine=engine_default,route=route_default):
+    'get income_wbs quantity need to be calculated'
+    frame_wbs=get_wbs()
+    query='''
+             select detail_wbs.detail_wbs_code,
+                    detail_wbs.income_boq_proportion,
+                    detail_wbs.wbs_code,
+                    %s_quantity.%s_quantity
+                    from detail_wbs join %s_quantity
+                         on detail_wbs.detail_wbs_code=%s_quantity.detail_wbs_code
+                    where %s_quantity.%s_quantity>0
+            '''%(date,date,date,date,date,date)
+    frame_income_wbs=pd.read_sql_query(query,engine)
+    frame_income_wbs['actual_income_quantity']=frame_income_wbs['income_boq_proportion']*frame_income_wbs['%s_quantity'%(date)]
+    frame_income_wbs=frame_income_wbs.pivot_table('actual_income_quantity',index='wbs_code',aggfunc='sum')
+    frame_income_wbs=pd.merge(frame_wbs,frame_income_wbs,left_on='wbs_code',right_index=True,how='outer')
+    if route=='localmachine':
+        path=input('please enter path: ')
+        print('%s:saving income_wbs_quantity'%(datetime.datetime.today()))
+        translate_title(frame_income_wbs).to_csv(os.path.join(path,'%s_income_wbs.csv'%(date)),encoding='utf-8-sig')
+        print('%s:income_wbs_quantity save complete'%(datetime.datetime.today()))
+
+
 def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=route_default):
     '''
        query detail sub_contractor quantity,
@@ -127,7 +150,7 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=ro
 def sub_contractor_analysis_command_post(date=date_default,route=route_default):
     '''
       sub_contractor_quantity analysis that command post asked.
-      contrast quantity by wbs code to sub_contract
+      contrast quantity by wbs_code to sub_contract_boq_code
     '''
     frame1=get_sub_contractor_quantity()
     frame_wbs=get_wbs()
@@ -204,6 +227,7 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
                                   %s.%s_proportion,
                                   %s.sub_contract_boq_code,
                                   detail_wbs.detail_wbs_code,
+                                  detail_wbs.detail_wbs_quantity,
                                   detail_wbs.sub_contract_boq_proportion,
                                   %s_quantity.%s_quantity,
                                   wbs.income_boq_code
@@ -212,7 +236,7 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
                                  %s.sub_contract_boq_code=detail_wbs.sub_contract_boq_code and
                                  detail_wbs.detail_wbs_code=%s_quantity.detail_wbs_code and
                                  detail_wbs.wbs_code=wbs.wbs_code
-                            where %s_quantity.%s_quantity>0 and price_of_%s.%s_kind!='无'
+                            where price_of_%s.%s_kind!='无'
                                 '''%(material,material,\
                                      material,price_now,\
                                      material,price_remaining,\
@@ -223,11 +247,16 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
                                      material,material,date,\
                                      material,material,material,material,\
                                      material,date,\
-                                     date,date,material,material)
+                                     material,material)
         frame_material=pd.read_sql_query(get_material_quantity_sql,engine)
         frame_material['%s_quantity'%(material)]=frame_material[actural_proportion]*\
                                        frame_material['%s_quantity'%(date)]*\
-                                       frame_material['sub_contract_boq_proportion']
+                                       frame_material['sub_contract_boq_proportion']*\
+                                       frame_material['%s_proportion'%(material)]
+        frame_material['%s_totalquantity'%(material)]=frame_material[actural_proportion]*\
+                                       frame_material['detail_wbs_quantity']*\
+                                       frame_material['sub_contract_boq_proportion']*\
+                                       frame_material['%s_proportion'%(material)]
         frame_material['%s_cost'%(material)]=frame_material[price_now]*frame_material['%s_quantity'%(material)]
         return frame_material
     frame_steel=get_material_quantity('steel')
@@ -248,7 +277,7 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
      but the keys contain detail_wbs_code to make sure not return Descartes with duplicate result.
      and the keys contain all the same columns between material_frame,so the result will have no _x _y.
     '''
-    keys_list=['detail_wbs_code','%s_quantity'%(date),'income_boq_code','sub_contract_boq_code','sub_contract_boq_proportion']
+    keys_list=['detail_wbs_code','%s_quantity'%(date),'detail_wbs_quantity','income_boq_code','sub_contract_boq_code','sub_contract_boq_proportion']
     frame_out=pd.merge(frame_steel,frame_concrete,on=keys_list,how='outer')
     frame_out=pd.merge(frame_out,frame_flooring_material,on=keys_list,how='outer')
     frame_out=pd.merge(frame_out,frame_formwork,on=keys_list,how='outer')
@@ -266,6 +295,8 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
     
 
 if __name__=='__main__':
-    income_analysis()
-    sub_contractor_analysis()
+    #income_analysis()
+    #sub_contractor_analysis()
+    #income_wbs()
+    #sub_contractor_analysis_command_post()
     get_material_quantity()
