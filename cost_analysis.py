@@ -48,23 +48,37 @@ def translate_title(source_frame,engine=engine_default):
        get translate_dict which\'s key is english and value is chinese.so the sheet\'s title can be translated to chinese.
        only be used when route='localmachine' and rename in out_put csv file.in web and import condition return english title.
     '''
+    #get defualt translate_dict
     frame1=pd.read_sql_query('select chinese,english from chinese_vs_english_title',engine)
-    translate_dic={'total_material_cost':'甲供材总费用'}
-    add_word_dic={'cost':'费用','quantity':'工程量','totalquantity':'总工程量'}
+    translate_dic={'total_material_cost':'甲供材总费用','actural_quantity':'完成工程量'}
+    add_word_dic={'cost':'费用','quantity':'工程量','totalquantity':'总工程量','actrualquantity':'完成工程量'}
     for i in range(len(frame1['chinese'])):
         translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
-    for title in list(source_frame.columns):  #for the title add date/quantity/cost,process the translate_dic.
-        if re.match(r'(.+)_(.+)$',title):     #for the frame's columns that not have '_',such as sub_contractor_short_name pivoted table.
-            match_obj=re.match(r'(.+)_(.+)$',title)
-            if match_obj.group(1) in translate_dic.keys():
-                if match_obj.group(2) not in add_word_dic.keys():
-                    translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+match_obj.group(2))
-                else:
-                    translate_dic.setdefault(title,translate_dic[match_obj.group(1)]+'_'+add_word_dic[match_obj.group(2)])
-            else:
-                pass
+    
+    #if title in default translate_dict,pass.else use re to check if the group(1) part is in defualt translate_dict.
+    def add_translate_item(title):
+        if title in translate_dic.keys():
+            return title 
         else:
-            pass
+            if re.match(r'(.+)_(.+)$',title):     #for the frame's columns that not have '_',such as sub_contractor_short_name pivoted table.
+                match_obj=re.match(r'(.+)_(.+)$',title)
+                if match_obj.group(1) in translate_dic.keys():
+                    if match_obj.group(2) not in add_word_dic.keys():
+                        return translate_dic[match_obj.group(1)]+'_'+match_obj.group(2)
+                    else:
+                        return translate_dic[match_obj.group(1)]+'_'+add_word_dic[match_obj.group(2)]
+                else:
+                    return title
+            else:
+                return title 
+    for title in source_frame.columns:
+        if isinstance(title,tuple):
+            title_word=add_translate_item(title[0])
+            for i in range(1,len(title)):
+                title_word=title_word+'_'+add_translate_item(title[i])
+            translate_dic.setdefault(title,title_word)
+        else:
+            translate_dic.setdefault(title,add_translate_item(title))
     source_frame=source_frame.rename(columns=translate_dic)
     return source_frame
             
@@ -120,7 +134,7 @@ def income_wbs(date=date_default,engine=engine_default,route=route_default):
         print('%s:income_wbs_quantity save complete'%(datetime.datetime.today()))
 
 
-def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=route_default):
+def get_sub_contractor_quantity(date=date_default,engine=engine_default):
     '''
        query detail sub_contractor quantity,
        result contains wbs_code,income_boq_code,sub_contract_boq_code，
@@ -130,6 +144,7 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=ro
     sub_contractor_quantity_sql="""
                      select wbs.wbs_code,
                             wbs.income_boq_code,
+                            detail_wbs.income_boq_proportion,
                             detail_wbs.detail_wbs_code,
                             detail_wbs.sub_contract_boq_code,
                             detail_wbs.sub_contract_boq_proportion,
@@ -144,7 +159,10 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default,route=ro
     frame_sub_contractor_quantity=pd.read_sql_query(sub_contractor_quantity_sql,engine)
     frame_sub_contractor_quantity['actural_quantity']=(frame_sub_contractor_quantity['sub_contract_boq_proportion']*
                                                        frame_sub_contractor_quantity['%s_quantity'%(date)])
-    return frame_sub_contractor_quantity[['wbs_code','income_boq_code','sub_contract_boq_code','sub_contractor_short_name','actural_quantity']]
+    frame_sub_contractor_quantity['income_boq_acturalquantity']=(frame_sub_contractor_quantity['income_boq_proportion']*
+                                                        frame_sub_contractor_quantity['%s_quantity'%(date)])
+    return frame_sub_contractor_quantity[['detail_wbs_code','wbs_code','income_boq_code',\
+                                 'income_boq_acturalquantity','sub_contract_boq_code','sub_contractor_short_name','actural_quantity']]
 
 
 def sub_contractor_analysis_command_post(date=date_default,route=route_default):
@@ -167,6 +185,30 @@ def sub_contractor_analysis_command_post(date=date_default,route=route_default):
     else:
         return frame_out
 
+
+def sub_contractor_analysis_command_post2(date=date_default,route=route_default):
+    'the sub_contractyor_analysis command post asked at 201804 that contrast quantity by income_boq_code to sub_contract_boq'
+    keys=['detail_wbs_code','income_boq_code','sub_contract_boq_code','sub_contractor_short_name']
+    frame0=get_sub_contractor_quantity(date=202001)
+    frame0=frame0[['detail_wbs_code','income_boq_code','income_boq_acturalquantity','sub_contract_boq_code','sub_contractor_short_name','actural_quantity']]
+    frame0=frame0.rename(columns={'income_boq_acturalquantity':'income_boq_totalquantity','actural_quantity':'sub_contractor_totalquantity'})
+    frame1=get_sub_contractor_quantity()
+    frame_income_boq=get_income_boq()
+    frame_sub_contract_boq=get_sub_contract_boq()
+    frame_out=pd.merge(frame0,frame1,on=keys,how='outer')
+    frame_out=pd.pivot_table(frame_out,values=['income_boq_totalquantity','sub_contractor_totalquantity','actural_quantity','income_boq_acturalquantity'],
+                            index=keys[1:3],columns=['sub_contractor_short_name'],aggfunc='sum')
+    frame_out=pd.merge(frame_out.reset_index(),frame_income_boq,on='income_boq_code',how='outer')
+    frame_out=frame_out.rename(columns={('sub_contract_boq_code', ''):'sub_contract_boq_code'})
+    frame_out=pd.merge(frame_out,frame_sub_contract_boq,on='sub_contract_boq_code',how='outer')
+    if route is 'localmachine':
+        path=input('please enter save path:')
+        print('%s:saving sub_contract_analysis command post asked2...'%(datetime.datetime.today()))
+        translate_title(frame_out).to_csv('%s\\%s_sub_contractor_analysis_command_post2.csv'%(path,date),encoding='utf-8-sig')
+        print('%s:save completed'%(datetime.datetime.today()))
+    else:
+        return frame_out
+    
 
 def sub_contractor_analysis(date=date_default,route=route_default):
     '''
@@ -299,4 +341,5 @@ if __name__=='__main__':
     #sub_contractor_analysis()
     #income_wbs()
     #sub_contractor_analysis_command_post()
-    get_material_quantity()
+    sub_contractor_analysis_command_post2()
+    #get_material_quantity()
