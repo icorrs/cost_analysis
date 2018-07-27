@@ -13,8 +13,7 @@ import pymysql
 import sqlalchemy
 
 #default arg
-engine_default = sqlalchemy.create_engine('mysql+pymysql://root:nakamura7@\
-                 localhost:3306/cost_analysis?charset=utf8')
+engine_default = sqlalchemy.create_engine('mysql+pymysql://root:nakamura7@localhost:3306/cost_analysis?charset=utf8')
 route_default = 'localmachine'
 date_default = input('please enter date:')
 
@@ -49,8 +48,8 @@ def get_sub_contractor_list(engine=engine_default):
 
 def translate_title(source_frame,engine=engine_default):
     '''
-       get translate_dict which\'s key is english and 
-       value is chinese.so the sheet\'s title can be translated to chinese.
+       get translate_dict which's key is english and 
+       value is chinese.so the sheet's title can be translated to chinese.
        only be used when route='localmachine' and 
        rename in out_put csv file.in web and 
        import condition return english title.
@@ -59,7 +58,8 @@ def translate_title(source_frame,engine=engine_default):
     frame1 = pd.read_sql_query('select chinese,english \
                                 from chinese_vs_english_title',engine)
     translate_dic = {'total_material_cost':'甲供材总费用',
-                    'actural_quantity':'完成工程量'}
+                    'actural_quantity':'完成工程量',
+                    'id_of_legal_representative':'法人代表身份证号'}
     add_word_dic = {'cost':'费用','quantity':'工程量',
                   'totalquantity':'总工程量','actrualquantity':'完成工程量'}
     for i in range(len(frame1['chinese'])):
@@ -290,7 +290,7 @@ def sub_contractor_analysis(date=date_default,route=route_default):
         return frame_out
 
 
-def get_material_quantity(date=date_default,engine=engine_default,route=route_default):
+def get_materials_quantity(date=date_default,engine=engine_default,route=route_default):
     '''
        get detail material quantity should be used and acturally used,
        contains income_boq_code,sub_contract_code,kind_of_material,material_actrual_proportion
@@ -347,16 +347,16 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
                                      material,material)
         frame_material = pd.read_sql_query(get_material_quantity_sql,engine)
         frame_material['%s_quantity'%(material)] = \
-            frame_material['actural_proportion']*\
+            frame_material[actural_proportion]*\
             frame_material['%s_quantity'%(date)]*\
             frame_material['sub_contract_boq_proportion']*\
             frame_material['%s_proportion'%(material)]
         frame_material['%s_totalquantity'%(material)] = \
-            frame_material['actural_proportion']*\
+            frame_material[actural_proportion]*\
             frame_material['detail_wbs_quantity']*\
             frame_material['sub_contract_boq_proportion']*\
             frame_material['%s_proportion'%(material)]
-        frame_material['%s_cost'%(material)] = frame_material['price_now']\
+        frame_material['%s_cost'%(material)] = frame_material[price_now]\
             *frame_material['%s_quantity'%(material)]
         return frame_material
     frame_steel = get_material_quantity('steel')
@@ -404,9 +404,10 @@ def get_material_quantity(date=date_default,engine=engine_default,route=route_de
     
 
 if __name__=='__main__':
-    #income_analysis()
+    income_analysis()
     #sub_contractor_analysis()
     #income_wbs()
     #sub_contractor_analysis_command_post()
-    sub_contractor_analysis_command_post2()
-    #get_material_quantity()
+    #sub_contractor_analysis_command_post2()
+    #get_materials_quantity()
+
