@@ -1,3 +1,4 @@
+#coding=utf-8
 '''
    A module get cost data from mysql,return cost_analysis sheet.
    at this moment(2018.04.03）,does not consider how can be showed in web,
@@ -12,10 +13,13 @@ import pandas as pd
 import pymysql
 import sqlalchemy
 
+import consts 
+
 #default arg
-engine_default = sqlalchemy.create_engine('mysql+pymysql://root:nakamura7@localhost:3306/cost_analysis?charset=utf8')
+date_default = consts.DATA_DEFAULT
+engine_str = consts.ENGINE_STR
+engine_default = sqlalchemy.create_engine(engine_str)
 route_default = 'localmachine'
-date_default = input('please enter date:')
 
 
 def get_income_boq(engine=engine_default):
