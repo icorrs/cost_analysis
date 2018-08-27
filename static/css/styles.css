@@ -1,5 +1,5 @@
 * {
-    max-width:800px;
+    max-width:1000px;
     margin:10px auto 10px auto;
     text-align:center;
     background-repeat:repeat-y;
@@ -13,19 +13,40 @@
     width:100%;
     top:0px;
     margin:0px auto 0px auto;
+    z-index:10;
 }
 
 #content {
-    margin:100px auto 0px auto;
+    margin:90px auto 200px auto;
+    z-index:8;
+
 }
 
-ol {
+#footer {
+    width:100%;
+    text-align:center;
+    background-color:rgb(172, 211, 226);
+    position:fixed;
+    bottom:0px;
+    margin:0px;
+    z-index:10;
+}
+
+#footer1,#footer2 {
+    text-align:center;
+}
+
+ul {
     border-top:2px solid #000;
-    border-bottom:2px solid #000;
     list-style-type: decimal-leading-zero;
-    margin:0px auto 0px auto;
+    margin:0px 0px 0px 0px;
     padding:10px;
     background-color:rgb(200, 210, 243);
+}
+
+#tab-1,#tab-2,#tab-3,#tab-4 {
+    margin:0px 0px 0px 0px;
+    background-color:rgb(184, 197, 238);
 }
 
 
@@ -35,48 +56,28 @@ li {
     display:inline;
 }
 
-ul li {
-    display:inline;
+table {
+    empty-cells:show;
+    border-collapse:collapse;
+    border-spacing:2px;
+    width:150%;
+    border:2px solid #000000;
 }
 
-p.firstline {
-    margin:80px 0px 0px 0px;
+th,td {
+    padding:5px;
+    border:0.8px solid #000000;
 }
 
-h2 {
-    text-transform:uppercase;
+tr.sum {
+    background-color:rgb(29, 221, 116);
+    border:2px;
 }
-
-
-h3 {
-    text-transform:capitalize;
-    text-decoration:underline;
-    text-decoration:overline;
-    text-decoration:line-through;
-}
-
 
 p {
     line-height:20px;
     margin:10px 0px 10px  0px;
     text-align:left;
-}
-
-.imagepart {
-    width:500px;
-    margin:10px auto 10px auto;
-    text-align:center;
-    overflow:auto;
-}
-
-.imagezone01 {
-    width:250px;
-    float:left;
-}
-
-.imagezone02 {
-    width:250px;
-    float:right;
 }
 
 
@@ -90,40 +91,6 @@ label {
     margin:10px auto 10px 10px;
 }
 
-table {
-    empty-cells:show;
-    border-collapse:collapse;
-    border-spacing:2px;
-    border:2px solid #000000;
-}
-
-th,td {
-    padding:5px;
-    border:2px solid #000000;
-}
-
-td {
-    border:2px solid #000000;
-}
-
-th.column {
-    font-size:20px;
-    color:rgb(18, 66, 223);
-    border-top:3px solid #e66a41;
-    border-bottom:3px solid #e4a00d;
-}
-
-th.index {
-    border-bottom:3px solid #161602;
-}
-
-tr.even th,tr.even td {
-    background-color:#b4c5f5;
-}
-
-td.money {
-    text-align:right;
-}
 
 legend {
     background-color:#8fadec;
@@ -134,12 +101,4 @@ fieldset {
     border:3px solid #4d0303;
     border-radius:10px;
     text-align:left;
-}
-
-#result {
-    text-align:center;
-}
-
-li.liclass {
-    background-color:#e4a00d;
 }

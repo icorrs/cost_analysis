@@ -16,7 +16,7 @@ import sqlalchemy
 import consts 
 
 #default arg
-date_default = consts.DATA_DEFAULT
+date_default = consts.DATE_DEFAULT
 engine_str = consts.ENGINE_STR
 engine_default = sqlalchemy.create_engine(engine_str)
 route_default = 'localmachine'
@@ -41,6 +41,13 @@ def get_wbs(engine=engine_default):
     return frame_wbs
 
 
+def get_sub_contractor_account(engine=engine_default):
+    'get sub_contractor_account'
+    frame_sub_contractor_account = pd.read_sql_query('select * \
+        from sub_contractor_account',engine)
+    return frame_sub_contractor_account
+
+
 def get_sub_contractor_list(engine=engine_default):
     'get all the sub_contractor\'s short name,return as list'
     frame1 = pd.read_sql_query('select sub_contractor_short_name \
@@ -49,6 +56,29 @@ def get_sub_contractor_list(engine=engine_default):
     list1 = list(frame1)
     return list1
 
+
+def get_cal_and_payed(engine=engine_default):
+    'get sub_contractor calculated num and payed num'
+    frame1 = pd.read_sql_query('select * from cal_and_payed',engine)
+    frame1['total_payed'] = frame1['bill_payed']+frame1['cash_payed']
+    frame1['rate_of_payed'] = frame1['total_payed'].div(frame1['pure_cal'],fill_value=0)
+    frame1['rate_of_bill'] = frame1['bill_payed'].div(frame1['total_payed'],fill_value=0)
+    return frame1
+
+def get_translate_dic(engine=engine_default):
+    'get translate title table'
+    frame1 = pd.read_sql_query('select chinese,english \
+                                from chinese_vs_english_title',engine)
+    translate_dic = {'total_material_cost':'甲供材总费用',
+                    'actural_quantity':'完成工程量',
+                    'id_of_legal_representative':'法人代表身份证号',
+                    'income':'收入',
+                    'income_cal':'收入结算',
+                    'sub_cal':'分包结算'}
+    for i in range(len(frame1['chinese'])):
+        translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
+    return translate_dic
+    
 
 def translate_title(source_frame,engine=engine_default):
     '''
@@ -59,19 +89,13 @@ def translate_title(source_frame,engine=engine_default):
        import condition return english title.
     '''
     #get defualt translate_dict
-    frame1 = pd.read_sql_query('select chinese,english \
-                                from chinese_vs_english_title',engine)
-    translate_dic = {'total_material_cost':'甲供材总费用',
-                    'actural_quantity':'完成工程量',
-                    'id_of_legal_representative':'法人代表身份证号'}
+    translate_dic = get_translate_dic()
     add_word_dic = {'cost':'费用','quantity':'工程量',
                   'totalquantity':'总工程量','actrualquantity':'完成工程量'}
-    for i in range(len(frame1['chinese'])):
-        translate_dic.setdefault(frame1.iloc[i,1],frame1.iloc[i,0])
-    
-    # if title in default translate_dict,pass.else use re to check 
-    # if the group(1) part is in defualt translate_dict.
     def add_translate_item(title):
+        # if title in default translate_dict,pass.else use re to check 
+        # if the group(1) part is in defualt translate_dict.\
+        # combine chinese to groupe(2)
         if title in translate_dic.keys():
             return title 
         else:
@@ -117,14 +141,18 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
                     '''%(date,date,date,date,date,date)
     frame_income_boq = get_income_boq()
     frame_worked_income = pd.read_sql_query(worked_income_sql,engine)
-    frame_worked_income['actural_quantity'] = frame_worked_income\
-        ['income_boq_proportion']*frame_worked_income['%s_quantity'%(date)]
+    frame_worked_income['actural_quantity'] = (frame_worked_income\
+        ['income_boq_proportion']*frame_worked_income['%s_quantity'%(date)])
     frame_worked_income = frame_worked_income[['income_boq_code',\
         'actural_quantity']]
     frame_worked_income = pd.pivot_table(frame_worked_income,\
         index=['income_boq_code'],values=['actural_quantity'],aggfunc='sum')
     frame_worked_income = pd.merge(frame_worked_income,frame_income_boq,\
         right_on='income_boq_code',left_index=True,how='outer')
+    frame_worked_income['income'] = (frame_worked_income\
+        ['actural_quantity']*frame_worked_income['income_boq_price'])
+    frame_worked_income['actural_quantity'] = frame_worked_income['actural_quantity']
+
     if route is 'localmachine':
         path = input('please enter save path:')
         print('%s:saving income_analysis excel file'%(datetime.datetime.today()))

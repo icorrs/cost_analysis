@@ -3,29 +3,97 @@
     <head>
         <title>贵隆A02成本数据</title>
         <meta http-equiv="Content-Type" 
-        content="text/html; charset=utf-8" />
+        content="text/html; charset=utf8" />
         <link href='static/images/favicon.ico' 
         rel="shortcut icon" />
         <link href='static/css/styles.css' 
         type='text/css' rel='stylesheet'/>
     </head>
     <body>
-        <div class='nav'>
-            <ol list-style-type:upper roman>
+        <div class='nav' id='tab'>
+            <ul list-style-type:upper roman>
                 <li class='now'>
-                    <a href='get_income_boq' id='income_boq'>
+                    <a href='#tab-1' id='income'>
                         收入清单
                     </a>
                 </li>
                 <li class=''>
-                    <a href='get_sub_contractor_account' id='sub_contractor_accoutn'>
+                    <a href='#tab-2' id='sub_contractor'>
                         分包台帐
                     </a>
                 </li>
-            </ol>
+                <li class=''>
+                    <a href='#tab-3' id='cal_and_payed'>
+                        结算支付
+                    </a>
+                </li>
+                <li class=''>
+                    <a href='#tab-4' id='material_quantity'>
+                        材料应耗
+                    </a>
+                </li>
+            </ul>
+            <div id='tab-1'>
+                <ul>
+                    <li class=''>
+                        <a href=''></a>
+                    </li>
+                </ul>
+            </div>
+            <div id='tab-2'>              
+                <ul>
+                    <li class=''>
+                        <a href='分包概况' id='sub_contractor_condition'>
+                            分包概况
+                        </a>
+                    </li>
+                    <li class=''>
+                        <a href='分包合同' id='sub_contract_message'>
+                            分包合同
+                        </a>
+                    </li>
+                    <li class=''>
+                        <a href='分包资质' id='sub_contractor_licence'>
+                            分包资质
+                        </a>
+                    </li>
+                    <li class=''>
+                        <a href='银行帐号' id='sub_contractor_bank_account'>
+                            银行帐号
+                        </a>
+                    </li>
+                </ul>                
+            </div>
+            <div id='tab-3'>
+                <ul>
+                    <li class=''>
+                        暂无二级分项<a href=''></a>
+                    </li>
+                </ul>
+            </div>
+            <div id='tab-4'>
+                <ul>
+                    <li class=''>
+                        <a href='混凝土' id='concrete'>
+                            混凝土量
+                        </a>
+                    </li>
+                    <li class=''>
+                        <a href='钢筋' id='steel'>
+                            钢筋量
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
         <div id='content'>
-            content
+            表格加载区
+        </div>
+        <div id='footer'>
+            <p id='footer1'></p>
+            <p id='footer2'>&copy;copyright &nbsp&nbsp maozongjie 
+                    &nbsp&nbsp 2018 &nbsp&nbsp phone:18602221387
+                    &nbsp&nbsp qq:306668234</p>
         </div>
         <script src='static/js/jquery.js'></script>
         <script src='static/js/jquery-ui.js'></script>
