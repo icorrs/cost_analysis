@@ -32,7 +32,8 @@ def get_sub_contract_boq(engine=engine_default):
     'get sub_contract_boq'
     frame_sub_contract_boq = pd.read_sql_query('select * from \
         sub_contract_boq',engine)
-    return frame_sub_contract_boq
+    return frame_sub_contract_boq[['sub_contract_boq_code','sub_contract_boq_name',
+            'sub_contract_boq_unit','sub_contract_boq_price']]
 
 
 def get_wbs(engine=engine_default):
@@ -214,8 +215,11 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default):
     sub_contractor_quantity_sql = """
         select  wbs.wbs_code,
                 wbs.income_boq_code,
+                detail_wbs.detail_wbs_beginning_mileage,
+                detail_wbs.detail_wbs_ending_mileage,
                 detail_wbs.income_boq_proportion,
                 detail_wbs.detail_wbs_code,
+                detail_wbs.detail_wbs_quantity,
                 detail_wbs.sub_contract_boq_code,
                 detail_wbs.sub_contract_boq_proportion,
                 detail_wbs_code_vs_sub_contractor_short_name.sub_contractor_short_name,
@@ -225,8 +229,8 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default):
         on wbs.wbs_code=detail_wbs.wbs_code and
                 detail_wbs.detail_wbs_code=detail_wbs_code_vs_sub_contractor_short_name.detail_wbs_code and
                 detail_wbs.detail_wbs_code=%s_quantity.detail_wbs_code
-        where %s_quantity.%s_quantity>0
-                     """%(date,date,date,date,date,date,date,date)
+        where detail_wbs.detail_wbs_quantity>0
+                     """%(date,date,date,date,date,date)
     frame_sub_contractor_quantity = pd.read_sql_query\
         (sub_contractor_quantity_sql,engine)
     frame_sub_contractor_quantity['actural_quantity'] = \
@@ -234,13 +238,18 @@ def get_sub_contractor_quantity(date=date_default,engine=engine_default):
         frame_sub_contractor_quantity['%s_quantity'%(date)])
     frame_sub_contractor_quantity['actural_sub_quantity'] = \
         (frame_sub_contractor_quantity['sub_contract_boq_proportion']*
-        frame_sub_contractor_quantity['%s_sub_quantity'%(date)])    
+        frame_sub_contractor_quantity['%s_sub_quantity'%(date)])  
+    frame_sub_contractor_quantity['total_sub_quantity'] = (
+        frame_sub_contractor_quantity['detail_wbs_quantity']*
+        frame_sub_contractor_quantity['sub_contract_boq_proportion'])  
     frame_sub_contractor_quantity['income_boq_acturalquantity'] = \
         (frame_sub_contractor_quantity['income_boq_proportion']*
         frame_sub_contractor_quantity['%s_quantity'%(date)])
-    return frame_sub_contractor_quantity[['detail_wbs_code','wbs_code',\
-        'income_boq_code','income_boq_acturalquantity','sub_contract_boq_code',\
-        'sub_contractor_short_name','actural_quantity','actural_sub_quantity']]
+    return frame_sub_contractor_quantity[[
+        'detail_wbs_code','detail_wbs_beginning_mileage','detail_wbs_ending_mileage',
+        'wbs_code','income_boq_code','sub_contract_boq_code',
+        'sub_contractor_short_name','actural_quantity','total_sub_quantity',
+        'actural_sub_quantity','income_boq_acturalquantity']]
 
 
 def sub_contractor_analysis_command_post(date=date_default,route=route_default):

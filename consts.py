@@ -2,8 +2,8 @@
 
 DIALECT = 'mysql'
 DRIVER = 'pymysql'
-USERNAME = 'root'
-PASSWORD = 'nakamura7'
+USERNAME = 'myweb'
+PASSWORD = '696139'
 HOSTNAME = 'localhost'
 PORT = '3306'
 DATABASE = 'cost_analysis'

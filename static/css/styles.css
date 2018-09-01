@@ -7,6 +7,11 @@
     background-position:center;
 }
 
+a.current {
+    background-color:rgb(229, 240, 84);
+}
+
+
 .nav {
     color:rgb(15, 12, 1);
     position:fixed;
@@ -17,7 +22,7 @@
 }
 
 #content {
-    margin:90px auto 200px auto;
+    margin:100px auto 200px auto;
     z-index:8;
 
 }
@@ -37,16 +42,14 @@
 }
 
 ul {
-    border-top:2px solid #000;
+    border-top:0px solid #000;
     list-style-type: decimal-leading-zero;
     margin:0px 0px 0px 0px;
-    padding:10px;
-    background-color:rgb(200, 210, 243);
+    padding:4px;
 }
 
-#tab-1,#tab-2,#tab-3,#tab-4 {
+#tab-1,#tab-2,#tab-3,#tab-4,#tab-5 {
     margin:0px 0px 0px 0px;
-    background-color:rgb(184, 197, 238);
 }
 
 
