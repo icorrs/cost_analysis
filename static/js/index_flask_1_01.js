@@ -201,6 +201,10 @@ $(function() {
 $(function() {
     $sub_contractor.on('click',function(e) {
         e.preventDefault();
+        var id_of_e = e.target.id;
+        if(!id_of_e || id_of_e == 'tab-2') {
+        }
+        else {
         var sub_contractor_content = e.target.getAttribute("id")
         var sub_contractor_href = e.target.getAttribute("href")
         $('a').removeClass('current')
@@ -239,6 +243,7 @@ $(function() {
             $content.html($table);
             $footer1.text('{0} loaded'.replace('{0}',sub_contractor_content))
         })
+        }
     })
 })
 
@@ -308,8 +313,11 @@ $(function() {
 $(function() {
     $material_quantity.on('click',function(e) {
         e.preventDefault();
-        var material_content = e.target.getAttribute("id");
+        var material_content = e.target.id;
         var material_href = e.target.getAttribute('href')
+        if(!material_content || material_content == 'tab-4') {
+        }
+        else {
         $('a').removeClass('current')
         $('#{0}'.replace('{0}',material_content)).addClass('current')
         $footer1.text('{0} message loading...'.replace('{0}',material_content))
@@ -330,6 +338,7 @@ $(function() {
             $content.html($table)
             $footer1.text('{0} message loaded'.replace('{0}',material_content))
         })  
+        }
     })
 })
 
@@ -345,7 +354,7 @@ $(function() {
     $sub_contractor_income.on('click',function(e) {
         e.preventDefault(); 
         var contractor_short_name = e.target.id;
-        if(contractor_short_name == 'tab-5') {
+        if(!contractor_short_name || contractor_short_name == 'tab-5') {
         }
         else {
         $('a').removeClass('current');
