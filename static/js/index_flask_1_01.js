@@ -345,6 +345,12 @@ $(function() {
     $sub_contractor_income.on('click',function(e) {
         e.preventDefault(); 
         var contractor_short_name = e.target.id;
+<<<<<<< HEAD
+        if(contractor_short_name == 'tab-5') {
+        }
+        else {
+=======
+>>>>>>> 8c1f7495ecf6683064ae8fb208131770f35dff45
         $('a').removeClass('current');
         $('#{0}'.replace('{0}',contractor_short_name)).addClass('current');
         $content.html('正在获取{0}产值信息....'.replace('{0}',contractor_short_name))
@@ -392,5 +398,9 @@ $(function() {
                 }
             })
         })
+<<<<<<< HEAD
+        }
+=======
+>>>>>>> 8c1f7495ecf6683064ae8fb208131770f35dff45
     })
 })

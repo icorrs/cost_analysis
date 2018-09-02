@@ -142,9 +142,16 @@ def get_all_sub_contractor_income():
         frame1 = pd.read_json(json1)
     else:
         frame1 = cost_analysis.get_sub_contractor_quantity()
+<<<<<<< HEAD
+        frame1 = frame1[['detail_wbs_code','detail_wbs_content',
+            'detail_wbs_beginning_mileage', 'detail_wbs_ending_mileage',
+            'sub_contractor_short_name','sub_contract_boq_code',
+            'total_sub_quantity','actural_sub_quantity']]
+=======
         frame1 = frame1[['detail_wbs_code','detail_wbs_beginning_mileage',
             'detail_wbs_ending_mileage','sub_contractor_short_name',
             'sub_contract_boq_code','total_sub_quantity','actural_sub_quantity']]
+>>>>>>> 8c1f7495ecf6683064ae8fb208131770f35dff45
         f = open('/var/www/myweb/static/cachedata/%s_all_sub_contractor_income.json'\
             %(consts.DATE_DEFAULT),'w')
         json1 = frame1.to_json(orient='records',force_ascii=False)
@@ -185,10 +192,17 @@ def get_sub_contractor_income_detail(contractor_short_name,contract_boq_code):
     frame1 = frame1[frame1['sub_contract_boq_code'] == contract_boq_code]
     if contractor_short_name != '全部':        
         frame1 = frame1[frame1['sub_contractor_short_name'] == contractor_short_name]
+<<<<<<< HEAD
+        frame1 = frame1[['detail_wbs_code','detail_wbs_content','detail_wbs_beginning_mileage',
+            'detail_wbs_ending_mileage','total_sub_quantity','actural_sub_quantity']]       
+    else:
+        frame1 = frame1[['detail_wbs_code','detail_wbs_content','sub_contractor_short_name',
+=======
         frame1 = frame1[['detail_wbs_code','detail_wbs_beginning_mileage',
             'detail_wbs_ending_mileage','total_sub_quantity','actural_sub_quantity']]       
     else:
         frame1 = frame1[['detail_wbs_code','sub_contractor_short_name',
+>>>>>>> 8c1f7495ecf6683064ae8fb208131770f35dff45
             'detail_wbs_beginning_mileage','detail_wbs_ending_mileage',
             'total_sub_quantity','actural_sub_quantity']]
     json1 = frame1.to_json(orient='records',force_ascii=False)
