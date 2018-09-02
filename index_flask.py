@@ -190,7 +190,6 @@ def get_sub_contractor_income_detail(contractor_short_name,contract_boq_code):
             'detail_wbs_ending_mileage','total_sub_quantity','actural_sub_quantity']]       
     else:
         frame1 = frame1[['detail_wbs_code','detail_wbs_content','sub_contractor_short_name',
-
             'detail_wbs_beginning_mileage','detail_wbs_ending_mileage',
             'total_sub_quantity','actural_sub_quantity']]
     json1 = frame1.to_json(orient='records',force_ascii=False)
