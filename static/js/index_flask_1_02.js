@@ -121,8 +121,8 @@ $(function() {
             var sum_income_boq_total_price = table_obj[2]
             var $sumrow = $('<tr class="sum"><td></td><td></td></tr>')
             $sumrow.append($('<td></td>').text('合计'))
-            $sumrow.append($('<td></td><td></td><td></td><td></td>\
-                <td>{0}</td><td>{1}</td><td>{2}</td>'.
+            $sumrow.append($('<td></td><td></td><td></td><td>{0}</td>\
+                <td></td><td>{1}</td><td>{2}</td>'.
                 replace('{0}',round_num(sum_income_boq_total_price,2)).
                 replace('{1}',round_num(sum_finished_income,2)).
                 replace('{2}',round_percentage(sum_finished_income/
