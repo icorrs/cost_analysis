@@ -73,7 +73,6 @@ function table_json(data,divided_key='',divid_key='') {
         var sum_divid_key = 0
         var $table = $('<table></table>')
         var $throw = $('<tr><th>序号</th></tr>')
-        console.log(translate_dic)
         for(var key in json_data[0]) {
             $throw.append('<th>'+translate_dic[key]+'</th>')
         }
@@ -85,7 +84,7 @@ function table_json(data,divided_key='',divid_key='') {
             line_count += 1
             var $row = $('<tr><td>'+line_count+'</td></tr>')
             for(var key in json_data[num]) {
-                if(key == 'sub_contract_boq_code') {
+                if(key == 'sub_contract_boq_code'|| key == 'income_boq_code') {
                     $row.append($('<td><a href="" id={0}>'.replace('{0}',(json_data[num])[key])
                         +(json_data[num])[key]+'</a></td>'))
                 }
@@ -115,43 +114,19 @@ $(function() {
         $content.html('收入清单完成情况 加载中....')
         $.getJSON('/get_income_json')
         .done(function(data) {
-            var sum_income = 0
-            var row_count = 0           
-            var $table = $('<table><tr>\
-            <th>序号</th>\
-            <th>收入清单编号</th>\
-            <th>收入清单名称</th>\
-            <th>收入清单单位</th>\
-            <th>收入清单单价</th>\
-            <th>收入清单总量</th>\
-            <th>收入清单完成量</th>\
-            <th>收入清单完成价</th>\
-            </tr></table>')
-            $.each(JSON.parse(data),function(key,value) {
-                row_count += 1
-                var $row = $('<tr></tr>')
-                $row.append($('<td></td>').text(row_count))
-                $row.append($('<td>'+'<a href="" id={0}>'.
-                     replace('{0}',value.income_boq_code)+value.income_boq_code+'</a>'+'</td>'))
-                $row.append($('<td></td>').text(value.income_boq_name))
-                $row.append($('<td></td>').text(value.income_boq_unit))
-                $row.append($('<td></td>').text(value.income_boq_price))
-                $row.append($('<td></td>').text(value.income_boq_quantity))
-                $row.append($('<td></td>').text(round_num(value.actural_quantity,2)))
-                $row.append($('<td></td>').text(round_num(value.income,2)))
-                rows.push({jsonword:value,$element:$row})
-                $table.append($row)
-                sum_income += value.income
-            })
-            var $sumrow = $('<tr class="sum"></tr>')
-            $sumrow.append($('<td></td>'))
-            $sumrow.append($('<td></td>'))
+            var table_obj = table_json(data,divided_key='finished_income',
+                divid_key='income_boq_total_price')
+            var $table = table_obj[0]
+            var sum_finished_income = table_obj[1]
+            var sum_income_boq_total_price = table_obj[2]
+            var $sumrow = $('<tr class="sum"><td></td><td></td></tr>')
             $sumrow.append($('<td></td>').text('合计'))
-            $sumrow.append($('<td></td>'))
-            $sumrow.append($('<td></td>'))
-            $sumrow.append($('<td></td>'))
-            $sumrow.append($('<td></td>'))
-            $sumrow.append($('<td></td>').text(round_num(sum_income,2)))
+            $sumrow.append($('<td></td><td></td><td></td><td></td>\
+                <td>{0}</td><td>{1}</td><td>{2}</td>'.
+                replace('{0}',round_num(sum_income_boq_total_price,2)).
+                replace('{1}',round_num(sum_finished_income,2)).
+                replace('{2}',round_percentage(sum_finished_income/
+                    sum_income_boq_total_price))))
             $table.append($sumrow)
             $content.html($table)
             $footer1.text('收入清单完成情况加载完毕')
@@ -164,7 +139,6 @@ $(function() {
                 $tab1.hide();
                 $content.html('加载{0}明细'.replace('{0}',income_boq_code))
                 $footer1.text('loading....')
-
                 $.getJSON('get_income_boq_detail_json/{0}'.
                   replace('{0}',income_boq_code))
                 .done(function(data) {

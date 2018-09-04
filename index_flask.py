@@ -33,7 +33,10 @@ def get_income():
         json1 = f.read()
     else:
         frame1 = cost_analysis.income_analysis(route='web')
-        frame1 = frame1[frame1['income_boq_quantity']>0]
+        frame1 = frame1[frame1['finished_income']>0]
+        frame1 = frame1[['income_boq_code','income_boq_name','income_boq_unit',
+            'income_boq_price','income_boq_quantity','income_boq_total_price',
+            'actural_quantity','finished_income']]
         json1 = frame1.to_json(orient='records',force_ascii=False)
         f = open('/var/www/myweb/static/cachedata/%s_income.json'\
             %(consts.DATE_DEFAULT),'w')

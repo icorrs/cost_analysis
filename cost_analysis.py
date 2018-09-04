@@ -138,9 +138,8 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
         index=['income_boq_code'],values=['actural_quantity'],aggfunc='sum')
     frame_worked_income = pd.merge(frame_worked_income,frame_income_boq,\
         right_on='income_boq_code',left_index=True,how='outer')
-    frame_worked_income['income'] = (frame_worked_income\
+    frame_worked_income['finished_income'] = (frame_worked_income\
         ['actural_quantity']*frame_worked_income['income_boq_price'])
-    frame_worked_income['actural_quantity'] = frame_worked_income['actural_quantity']
     if route is 'localmachine':
         path = input('please enter save path:')
         print('%s:saving income_analysis excel file'%(datetime.datetime.today()))
