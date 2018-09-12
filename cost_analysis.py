@@ -17,18 +17,33 @@ import consts
 
 #default arg
 date_default = consts.DATE_DEFAULT
-engine_str = consts.ENGINE_STR
-engine_default = sqlalchemy.create_engine(engine_str)
 route_default = 'localmachine'
 
+class MetaSingleton(type):
+    _instances = {}
+    def __call__(cls,*args,**kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(MetaSingleton,cls).__call__(
+                *args,**kwargs)
+        return cls._instances[cls]
 
-def get_income_boq(engine=engine_default):
+
+class Database(metaclass=MetaSingleton):
+    engine_default = None
+    def myweb_engine(self):
+        self.engine_str = consts.ENGINE_STR
+        if self.engine_default is None:
+            self.engine_default = sqlalchemy.create_engine(self.engine_str)
+        return self.engine_default
+
+
+def get_income_boq(engine=Database().myweb_engine()):
     'get income boq '
     frame_income_boq = pd.read_sql_query('select * from income_boq',engine)
     return frame_income_boq
 
 
-def get_sub_contract_boq(engine=engine_default):
+def get_sub_contract_boq(engine=Database().myweb_engine()):
     'get sub_contract_boq'
     frame_sub_contract_boq = pd.read_sql_query('select * from \
         sub_contract_boq',engine)
@@ -36,20 +51,20 @@ def get_sub_contract_boq(engine=engine_default):
             'sub_contract_boq_unit','sub_contract_boq_price']]
 
 
-def get_wbs(engine=engine_default):
+def get_wbs(engine=Database().myweb_engine()):
     'get wbs in calculate system'
     frame_wbs = pd.read_sql_query('select * from wbs',engine)
     return frame_wbs
 
 
-def get_sub_contractor_account(engine=engine_default):
+def get_sub_contractor_account(engine=Database().myweb_engine()):
     'get sub_contractor_account'
     frame_sub_contractor_account = pd.read_sql_query('select * \
         from sub_contractor_account',engine)
     return frame_sub_contractor_account
 
 
-def get_sub_contractor_list(engine=engine_default):
+def get_sub_contractor_list(engine=Database().myweb_engine()):
     'get all the sub_contractor\'s short name,return as list'
     frame1 = pd.read_sql_query('select sub_contractor_short_name \
                                 from sub_contractor_account',engine)\
@@ -58,7 +73,7 @@ def get_sub_contractor_list(engine=engine_default):
     return list1
 
 
-def get_cal_and_payed(engine=engine_default):
+def get_cal_and_payed(engine=Database().myweb_engine()):
     'get sub_contractor calculated num and payed num'
     frame1 = pd.read_sql_query('select * from cal_and_payed',engine)
     frame1['total_payed'] = frame1['bill_payed']+frame1['cash_payed']
@@ -66,7 +81,7 @@ def get_cal_and_payed(engine=engine_default):
     frame1['rate_of_bill'] = frame1['bill_payed'].div(frame1['total_payed'],fill_value=0)
     return frame1
 
-def get_translate_dic(engine=engine_default):
+def get_translate_dic(engine=Database().myweb_engine()):
     'get translate title table'
     frame1 = pd.read_sql_query('select chinese,english \
                                 from chinese_vs_english_title',engine)
@@ -81,7 +96,7 @@ def get_translate_dic(engine=engine_default):
     return translate_dic
     
 
-def translate_title(source_frame,engine=engine_default):
+def translate_title(source_frame,engine=Database().myweb_engine()):
     '''
        get translate_dict which's key is english and 
        value is chinese.so the sheet's title can be translated to chinese.
@@ -124,7 +139,7 @@ def translate_title(source_frame,engine=engine_default):
     return source_frame
             
 
-def income_analysis(date=date_default,engine=engine_default,route=route_default):
+def income_analysis(date=date_default,engine=Database().myweb_engine(),route=route_default):
     '''
     income analysis.return a sheet contain income can be calculate
     if route is localmachine,get path to be saved.
@@ -150,7 +165,7 @@ def income_analysis(date=date_default,engine=engine_default,route=route_default)
         return frame_worked_income
 
 
-def get_income_boq_detail(date=date_default,engine=engine_default,route=route_default):
+def get_income_boq_detail(date=date_default,engine=Database().myweb_engine(),route=route_default):
     'get income boq  join detail_wbs'
     worked_income_sql = '''
                     select income_boq.income_boq_code,
@@ -176,7 +191,7 @@ def get_income_boq_detail(date=date_default,engine=engine_default,route=route_de
     return frame_worked_income
 
 
-def income_wbs(date=date_default,engine=engine_default,route=route_default):
+def income_wbs(date=date_default,engine=Database().myweb_engine(),route=route_default):
     'get income_wbs quantity need to be calculated'
     frame_wbs = get_wbs()
     query = '''
@@ -203,7 +218,7 @@ def income_wbs(date=date_default,engine=engine_default,route=route_default):
         print('%s:income_wbs_quantity save complete'%(datetime.datetime.today()))
 
 
-def get_sub_contractor_quantity(date=date_default,engine=engine_default):
+def get_sub_contractor_quantity(date=date_default,engine=Database().myweb_engine()):
     '''
        query detail sub_contractor quantity,
        result contains wbs_code,income_boq_code,sub_contract_boq_code，
@@ -349,7 +364,7 @@ def sub_contractor_analysis(date=date_default,route=route_default):
         return frame_out
 
 
-def get_material_quantity(material,date=date_default,engine=engine_default,route='web'):
+def get_material_quantity(material,date=date_default,engine=Database().myweb_engine(),route='web'):
     'get single material\'s quantity'
     frame_price = pd.read_sql_query('select * from price_of_%s'%(material),engine)
     if 'price_of_%s_%s'%(material,date) in frame_price.columns:
@@ -414,7 +429,7 @@ def get_material_quantity(material,date=date_default,engine=engine_default,route
     return frame_material
 
 
-def get_materials_quantity(date=date_default,engine=engine_default,route=route_default):
+def get_materials_quantity(date=date_default,engine=Database().myweb_engine(),route=route_default):
     '''
        get detail material quantity should be used and acturally used,
        contains income_boq_code,sub_contract_code,kind_of_material,material_actrual_proportion

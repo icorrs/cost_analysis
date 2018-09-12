@@ -87,20 +87,6 @@ def get_sub_contractor_account():
         f.write(json1)
     return jsonify(json1)
 
-'''
-@app.route('/get_translate_dic')
-def get_translate_dic():
-    if 'translate_dic.json' in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/translate_dic.json','r')
-        json1 = f.read()
-    else:
-        dic1 = cost_analysis.get_translate_dic()
-        json1 = json.dumps(dic1,ensure_ascii=False,separators=(',',':'))
-        f = open('/var/www/myweb/static/cachedata/translate_dic.json','w')
-        f.write(json1)
-    return jsonify(json1)
-'''
-
 
 @app.route('/get_cal_and_payed_json')
 def get_cal_and_payed_json():
