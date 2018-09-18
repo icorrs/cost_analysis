@@ -18,6 +18,7 @@ import consts
 
 app = Flask(__name__)
 cache_file_list = os.listdir('/var/www/myweb/static/cachedata')
+cache_file_path = '/var/www/myweb/static/cachedata'
 
 
 @app.route('/')
@@ -25,41 +26,53 @@ def index_flask():
     return render_template('index_flask.html')
 
 
+def use_cache(filename,level='json'):
+    '''
+    if filename exist in cache dir,read file and return jsonify, if not,
+    use func to get frame,and write frame\'json to file before returning jsonnify
+    '''
+    def decorator(func):
+        def wrapper():
+            if filename in cache_file_list:
+                f = open(os.path.join(cache_file_path,filename),'r')
+                json1 = f.read()
+                f.close()
+            else:
+                f = open(os.path.join(cache_file_path,filename),'w')
+                frame1 = func()
+                json1 = frame1.to_json(orient='records',force_ascii=False)
+                f.write(json1)
+                f.close()
+            if level == 'json':
+                return jsonify(json1)
+            else:
+                return pd.read_json(json1)
+        wrapper.__name__ = func.__name__
+        #see as https://stackoverflow.com/questions/17256602
+        return wrapper
+    return decorator
+
+
 @app.route('/get_income_json')
+@use_cache('%s_income.json'%(consts.DATE_DEFAULT))
 def get_income():
-    if '%s_income.json'%(consts.DATE_DEFAULT) in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/%s_income.json'\
-            %(consts.DATE_DEFAULT),'r')
-        json1 = f.read()
-    else:
-        frame1 = cost_analysis.income_analysis(route='web')
-        frame1 = frame1[frame1['finished_income']>0]
-        frame1 = frame1[['income_boq_code','income_boq_name','income_boq_unit',
+    frame1 = cost_analysis.income_analysis(route='web')
+    frame1 = frame1[frame1['finished_income']>0]
+    frame1 = frame1[['income_boq_code','income_boq_name','income_boq_unit',
             'income_boq_price','income_boq_quantity','income_boq_total_price',
             'actural_quantity','finished_income']]
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f = open('/var/www/myweb/static/cachedata/%s_income.json'\
-            %(consts.DATE_DEFAULT),'w')
-        f.write(json1)
-    return jsonify(json1)
+    return frame1
 
+
+@use_cache('%s_income_detail.json'%(consts.DATE_DEFAULT),level='frame')
 def get_income_detail():
-    if  '%s_income_detail.json'%(consts.DATE_DEFAULT) in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/%s_income_detail.json'
-            %(consts.DATE_DEFAULT),'r')
-        json1 = f.read()
-        frame1 = pd.read_json(json1)
-    else:
-        frame1 = cost_analysis.get_income_boq_detail()
-        frame1 = frame1[['detail_wbs_code','detail_wbs_content',
+    frame1 = cost_analysis.get_income_boq_detail()
+    frame1 = frame1[['detail_wbs_code','detail_wbs_content',
             'detail_wbs_beginning_mileage','detail_wbs_ending_mileage',
             'detail_wbs_income_quantity','finished_income_quantity',
             'income_boq_code',]]
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f = open('/var/www/myweb/static/cachedata/%s_income_detail.json'
-            %(consts.DATE_DEFAULT),'w')
-        f.write(json1)
     return frame1
+
 
 @app.route('/get_income_boq_detail_json/<income_boq_code>')
 def get_income_boq_detail(income_boq_code):
@@ -75,73 +88,50 @@ def get_income_boq_detail(income_boq_code):
 
 
 @app.route('/get_sub_contractor_account_json')
+@use_cache('sub_contractor_account.json',level='json')
 def get_sub_contractor_account():
-    if 'sub_contractor_account.json' in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/sub_contractor_account.json','r')
-        json1 = f.read()
-    else:
-        frame1 = cost_analysis.get_sub_contractor_account()
-        frame1 = frame1[frame1['sub_contractor_name'].notna()]
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f = open('/var/www/myweb/static/cachedata/sub_contractor_account.json','w')
-        f.write(json1)
-    return jsonify(json1)
+    frame1 = cost_analysis.get_sub_contractor_account()
+    frame1 = frame1[frame1['sub_contractor_name'].notna()]
+    return frame1
 
 
 @app.route('/get_cal_and_payed_json')
+@use_cache('cal_and_payed.json')
 def get_cal_and_payed_json():
-    if 'cal_and_payed.json' in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/cal_and_payed.json','r')
-        json1 = f.read()
-    else:
-        frame1 = cost_analysis.get_cal_and_payed()
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f = open('/var/www/myweb/static/cachedata/cal_and_payed.json','w')
-        f.write(json1)
-    return jsonify(json1)
+    frame1 = cost_analysis.get_cal_and_payed()
+    return frame1
+
+
+
+@use_cache('%s_materials_quantity.json'%(consts.DATE_DEFAULT),level='frame')
+def get_materials_quantity():
+    frame1 = cost_analysis.get_materials_quantity(route='web')
+    return frame1
 
 
 @app.route('/get_material_quantity_json/<material>')
-def get_material_quantity(material):
-    if '%s_material_quantity_%s.json'%(consts.DATE_DEFAULT,material) in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/%s_material_quantity_%s.json'\
-            %(consts.DATE_DEFAULT,material),'r')
-        json1 = f.read()
-    else:
-        frame1 = cost_analysis.get_material_quantity(material)
-        frame1 = frame1[['%s_kind'%(material),'%s_quantity'%(material),\
+def get_materiral_quantity(material):
+    frame1 = get_materials_quantity()
+    frame1 = frame1[['%s_kind'%(material),'%s_quantity'%(material),\
                  '%s_totalquantity'%(material),'sub_contractor_short_name']]
-        frame1 = frame1[frame1['%s_totalquantity'%(material)]>0]
-        frame1 = pd.pivot_table(frame1,index=['sub_contractor_short_name',\
+    frame1 = frame1[frame1['%s_totalquantity'%(material)]>0]
+    frame1 = pd.pivot_table(frame1,index=['sub_contractor_short_name',\
                  '%s_kind'%(material)],aggfunc='sum')
-        frame1 = frame1.reset_index()
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f = open('/var/www/myweb/static/cachedata/%s_material_quantity_%s.json'\
-            %(consts.DATE_DEFAULT,material),'w')
-        f.write(json1)
+    frame1 = frame1.reset_index()
+    json1 = frame1.to_json(orient='records',force_ascii=False)
     return jsonify(json1)
         
 
+@use_cache('%s_all_sub_contractor_income.json'%(consts.DATE_DEFAULT),level='frame')
 def get_all_sub_contractor_income():
     'get all sub_contractor_income detail from cost_analysis module'
-    if '%s_all_sub_contractor_income.json'%(consts.DATE_DEFAULT) in cache_file_list:
-        f = open('/var/www/myweb/static/cachedata/%s_all_sub_contractor_income.json'\
-            %(consts.DATE_DEFAULT),'r')
-        json1 = f.read()
-        frame1 = pd.read_json(json1)
-    else:
-        frame1 = cost_analysis.get_sub_contractor_quantity()
-        frame1 = frame1[['detail_wbs_code','detail_wbs_content',
+    frame1 = cost_analysis.get_sub_contractor_quantity()
+    frame1 = frame1[['detail_wbs_code','detail_wbs_content',
             'detail_wbs_beginning_mileage', 'detail_wbs_ending_mileage',
             'sub_contractor_short_name','sub_contract_boq_code',
             'total_sub_quantity','actural_sub_quantity']]
-        f = open('/var/www/myweb/static/cachedata/%s_all_sub_contractor_income.json'\
-            %(consts.DATE_DEFAULT),'w')
-        json1 = frame1.to_json(orient='records',force_ascii=False)
-        f.write(json1)
     return frame1
 
-   
 
 @app.route('/get_sub_contractor_income_json/<contractor_short_name>')
 def get_sub_contractor_income(contractor_short_name):

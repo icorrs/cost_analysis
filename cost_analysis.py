@@ -8,6 +8,7 @@
 import datetime
 import os
 import re
+import platform
 
 import pandas as pd
 import pymysql
@@ -19,6 +20,20 @@ import consts
 date_default = consts.DATE_DEFAULT
 route_default = 'localmachine'
 
+def default_path():
+    'get platform system and decide where to save file in file_out'
+    if 'Linux' in platform.platform():
+        return '/home/mzj'
+    else:
+        return 'c:\python tem'
+
+def file_out(source_frame,filename,path=default_path()):
+    'save dataframe to locaopath'
+    print('%s:saving %s excel file'%(datetime.datetime.today(),filename))    
+    source_frame.to_csv(os.path.join(path,filename),encoding='utf-8-sig')
+    print('%s:save completeed'%(datetime.datetime.today()))
+        
+  
 class MetaSingleton(type):
     _instances = {}
     def __call__(cls,*args,**kwargs):
@@ -36,7 +51,7 @@ class Database(metaclass=MetaSingleton):
             self.engine_default = sqlalchemy.create_engine(self.engine_str)
         return self.engine_default
 
-
+     
 def get_income_boq(engine=Database().myweb_engine()):
     'get income boq '
     frame_income_boq = pd.read_sql_query('select * from income_boq',engine)
@@ -156,11 +171,7 @@ def income_analysis(date=date_default,engine=Database().myweb_engine(),route=rou
     frame_worked_income['finished_income'] = (frame_worked_income\
         ['actural_quantity']*frame_worked_income['income_boq_price'])
     if route is 'localmachine':
-        path = input('please enter save path:')
-        print('%s:saving income_analysis excel file'%(datetime.datetime.today()))
-        translate_title(frame_worked_income).to_csv\
-            ('%s\\%s_income.csv'%(path,date),encoding='utf-8-sig')
-        print('%s:save completeed'%(datetime.datetime.today()))
+        file_out(translate_title(frame_worked_income),'%s_income_analysis.csv'%(date))
     else:  
         return frame_worked_income
 
@@ -211,11 +222,9 @@ def income_wbs(date=date_default,engine=Database().myweb_engine(),route=route_de
     frame_income_wbs = pd.merge(frame_wbs,frame_income_wbs,\
         left_on='wbs_code',right_index=True,how='outer')
     if route=='localmachine':
-        path = input('please enter path: ')
-        print('%s:saving income_wbs_quantity'%(datetime.datetime.today()))
-        translate_title(frame_income_wbs).to_csv\
-            (os.path.join(path,'%s_income_wbs.csv'%(date)),encoding='utf-8-sig')
-        print('%s:income_wbs_quantity save complete'%(datetime.datetime.today()))
+        file_out(translate_title(frame_income_wbs),'%s_income_wbs.csv'%(date))
+    else:
+        return frame_income_wbs
 
 
 def get_sub_contractor_quantity(date=date_default,engine=Database().myweb_engine()):
@@ -283,12 +292,7 @@ def sub_contractor_analysis_command_post(date=date_default,route=route_default):
     frame_out = pd.merge(frame_out,frame_sub_contract_boq,
         on=['sub_contract_boq_code'],how='outer')
     if route is 'localmachine':
-        path = input('please enter save path:')
-        print('%s:saving sub_contract_analysis command post asked')
-        translate_title(frame_out).to_csv\
-            ('%s\\%s_sub_contractor_analysis_command_post.csv'%(path,date),
-            encoding='utf-8-sig')
-        print('%s:save completed'%(datetime.datetime.today()))
+        file_out(translate_title(frame_out),'%s_sub_contractor_analysis_command_post.csv'%(date))
     else:
         return frame_out
 
@@ -320,13 +324,7 @@ def sub_contractor_analysis_command_post2(date=date_default,route=route_default)
     frame_out = pd.merge(frame_out,frame_sub_contract_boq,
         on='sub_contract_boq_code',how='outer')
     if route is 'localmachine':
-        path = input('please enter save path:')
-        print('%s:saving sub_contract_analysis command post asked2...'%
-            (datetime.datetime.today()))
-        translate_title(frame_out).to_csv\
-            ('%s\\%s_sub_contractor_analysis_command_post2.csv'%(path,date),
-            encoding='utf-8-sig')
-        print('%s:save completed'%(datetime.datetime.today()))
+        file_out(translate_title(frame_out),'%s_sub_contractor_analysis_command_post2'%(date))
     else:
         return frame_out
     
@@ -354,12 +352,7 @@ def sub_contractor_analysis(date=date_default,route=route_default):
         else:
             pass
     if route is 'localmachine':
-        path = input('please enter save path:')
-        print('%s:saving sub_contractor_analysis'%(datetime.datetime.today()))
-        translate_title(frame_out).to_csv \
-            ('%s\\%s_sub_contractor_analysis.csv'%(path,date),
-            encoding='utf-8-sig')
-        print('%s:save completed'%(datetime.datetime.today()))
+        file_out(translate_title(frame_out),'%s_sub_contractor_analysis.csv'%(date))
     else:
         return frame_out
 
@@ -475,11 +468,7 @@ def get_materials_quantity(date=date_default,engine=Database().myweb_engine(),ro
         frame_out['flooring_material_cost'].fillna(0)+\
         frame_out['other_material_cost'].fillna(0)
     if route is 'localmachine':
-        path = input('enter path to save:')
-        frame_out = translate_title(frame_out)
-        print('%s:saving material_quantity'%(datetime.datetime.today()))
-        frame_out.to_csv('%s\\%s_material.csv'%(path,date),encoding='utf-8-sig')
-        print('%s:save completed'%(datetime.datetime.today()))
+        file_out(translate_title(frame_out),'%s_material.csv'%(date))
     else:
         return frame_out
     
@@ -488,6 +477,6 @@ if __name__=='__main__':
     #income_analysis()
     #sub_contractor_analysis()
     #income_wbs()
-    sub_contractor_analysis_command_post()
+    #sub_contractor_analysis_command_post()
     #sub_contractor_analysis_command_post2()
-    #get_materials_quantity()
+    get_materials_quantity()
