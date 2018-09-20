@@ -4,6 +4,7 @@
 import re
 import os 
 import json
+import functools
 
 import pandas as pd
 
@@ -17,8 +18,8 @@ import consts
 
 
 app = Flask(__name__)
-cache_file_list = os.listdir('/var/www/myweb/static/cachedata')
 cache_file_path = '/var/www/myweb/static/cachedata'
+cache_file_list = os.listdir(cache_file_path)
 
 
 @app.route('/')
@@ -28,10 +29,11 @@ def index_flask():
 
 def use_cache(filename,level='json'):
     '''
-    if filename exist in cache dir,read file and return jsonify, if not,
+    if filename exist in cache dir,read file and return jsonify or dataframe,if not,
     use func to get frame,and write frame\'json to file before returning jsonnify
     '''
     def decorator(func):
+        @functools.wraps(func)
         def wrapper():
             if filename in cache_file_list:
                 f = open(os.path.join(cache_file_path,filename),'r')
@@ -47,8 +49,8 @@ def use_cache(filename,level='json'):
                 return jsonify(json1)
             else:
                 return pd.read_json(json1)
-        wrapper.__name__ = func.__name__
-        #see as https://stackoverflow.com/questions/17256602
+        #wrapper.__name__ = func.__name__ #use @functools.wraps(func) instead
+        #https://stackoverflow.com/questions/17256602
         return wrapper
     return decorator
 

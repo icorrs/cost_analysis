@@ -48,7 +48,6 @@ function table_json(data,divided_key='',divid_key='') {
     'read json data return a table which\'s title is the json data\'s key;\
     and if divided_key divid_key definded,add a rate column'
     var json_data = JSON.parse(data)
-
     if(divided_key == '' && divid_key == '') {
         var $table = $('<table></table>')
         var $throw = $('<tr><th>序号</th></tr>')
@@ -304,11 +303,13 @@ $(function() {
             var $table = table_obj[0]
             var sum_quantity = table_obj[1]
             var sum_totalquantity = table_obj[2]
-            var $sumrow = $('<tr class="sum"><td></td><td></td><td>合计</td></tr>')
-            $sumrow.append($('<td>'+round_num(sum_quantity,2)+'</td>'))
-            $sumrow.append($('<td>'+round_num(sum_totalquantity,2)+'</td>'))
-            $sumrow.append($('<td>'+round_percentage(sum_quantity/sum_totalquantity)+'</td>'))
-            $table.append($sumrow)
+            if(material_content == 'concrete' || material_content == 'steel') {
+                var $sumrow = $('<tr class="sum"><td></td><td></td><td>合计</td></tr>')
+                $sumrow.append($('<td>'+round_num(sum_quantity,2)+'</td>'))
+                $sumrow.append($('<td>'+round_num(sum_totalquantity,2)+'</td>'))
+                $sumrow.append($('<td>'+round_percentage(sum_quantity/sum_totalquantity)+'</td>'))
+                $table.append($sumrow)
+            }
             $content.html($table)
             $footer1.text('{0} message loaded'.replace('{0}',material_content))
         })  
