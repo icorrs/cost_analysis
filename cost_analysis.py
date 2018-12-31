@@ -340,6 +340,9 @@ def sub_contractor_analysis(date=date_default,route=route_default):
     frame_out = frame1.pivot_table(['actural_sub_quantity'],
         index=['income_boq_code','sub_contract_boq_code'],
         columns=['sub_contractor_short_name'],aggfunc='sum')
+    #code below must get column first then reset_index,
+    #or final frame will have multi column which can not be merged twice
+    frame_out = frame_out['actural_sub_quantity']
     frame_out = frame_out.reset_index()
     frame_out = pd.merge(frame_out,frame_income_boq,
         on=['income_boq_code'],how='outer')
@@ -474,9 +477,9 @@ def get_materials_quantity(date=date_default,engine=Database().myweb_engine(),ro
     
 
 if __name__=='__main__':
-    #income_analysis()
-    #sub_contractor_analysis()
-    #income_wbs()
-    #sub_contractor_analysis_command_post()
-    #sub_contractor_analysis_command_post2()
-    get_materials_quantity()
+    #income_analysis() #汇总收入清单
+    sub_contractor_analysis() #按照零号台帐汇总分包量
+    #income_wbs() #根据零号台帐汇总wbs应计量量
+    #sub_contractor_analysis_command_post() #按照wbs汇总分包量
+    #sub_contractor_analysis_command_post2() #按照收入清单河分包清单对比工程量
+    #get_materials_quantity()
